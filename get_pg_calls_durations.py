@@ -43,7 +43,10 @@ parser.add_argument("-i", "--interval", default=99999999,
     help="summary interval, seconds")
 
 parser.add_argument("-z", "--zero", dest="zero", action="store_true", 
-    help="zero history across display updates")
+    help="zero history across display updates (default)")
+parser.add_argument("-n","--no-zero", dest="zero", action="store_false", 
+    help="do not zero history across display updates")
+parser.set_defaults(zero=True)
 
 args = parser.parse_args()
 
