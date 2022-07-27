@@ -26,7 +26,7 @@ examples = """example:
 """
 
 parser = argparse.ArgumentParser(
-    description="Recording postgres function calls duration",
+    description="Recording postgres function call counts and timing",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog=examples)
 
@@ -42,7 +42,15 @@ parser.add_argument("-p", "--pid", metavar="PID", dest="pid",
 parser.add_argument("-i", "--interval", default=99999999,
     help="summary interval, seconds")
 
+parser.add_argument("-z", "--zero", dest="zero", action="store_true", 
+    help="zero history across display updates (default)")
+parser.add_argument("-n","--no-zero", dest="zero", action="store_false", 
+    help="do not zero history across display updates")
+parser.set_defaults(zero=True)
+
 args = parser.parse_args()
+
+zero = args.zero
 
 with open(EBPF_SRC) as fileobj:
      bpf_txt = fileobj.read()
@@ -86,6 +94,7 @@ def signal_ignore(signal, frame):
 # output
 exiting = 0 if args.interval else 1
 dist = b.get_table("dist")
+time_dist = b.get_table("time_dist")
 
 while (1):
     try:
@@ -99,8 +108,21 @@ while (1):
     print ("%-8s: %s calls duration\n" % (strftime("%H:%M:%S"), func))
     #print("%-8s\n" % strftime("%H:%M:%S"), end="")
 
-    dist.print_log2_hist("usecs")
-    dist.clear()
+    dist.print_log2_hist("usecs_count")
+    if zero: dist.clear()
+
+    report_count = b["total_count"]
+    if len(report_count.values()) > 0:
+        print("total: %u" % report_count.values()[0].value)
+        if zero: report_count.clear()
+
+    time_dist.print_log2_hist("usecs_time")
+    if zero: time_dist.clear()
+
+    report_time = b["total_time"]
+    if len(report_time.values()) > 0:
+        print("total: %u" % report_time.values()[0].value)
+        if zero: report_time.clear()
 
     if exiting:
         print("Detaching...")
