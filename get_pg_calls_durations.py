@@ -26,7 +26,7 @@ examples = """example:
 """
 
 parser = argparse.ArgumentParser(
-    description="Recording postgres function calls duration",
+    description="Recording postgres function call counts and timing",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog=examples)
 
